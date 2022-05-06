@@ -132,3 +132,100 @@ Menjalankan Test
 Untuk menjalankan test, kita bisa gunakan PHPUnit seperti biasanya
 Atau jika ingin menjalankan semua test, bisa menggunakan file artisan dengan perintah :
 php artisan test
+
+Environment
+Saat kita membuat aplikasi, kadang kita perlu menyimpan nilai konfigurasi di environment variable
+Laravel memiliki fitur untuk memudahkan kita mengambil data dari environment variable
+Kita bisa menggunakan function env(key) atau Env::get(key) untuk mendapatkan nilai dari environment variable
+Internal implementasi dari Environment variable di Laravel menggunakan library https://github.com/vlucas/phpdotenv
+
+Kode : Environment Variable
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Env;
+use Tests\TestCase;
+
+class EnvironmentTest extends TestCase
+{
+    public function testGetEnv()
+    {
+        $youtube = env('YOUTUBE');
+
+        self::assertEquals('Programmer Zaman Now', $youtube);
+    }
+
+    public function testDefaultEnv()
+    {
+        $author = Env::get('AUTHOR', 'Eko');
+
+        self::assertEquals('Eko', $author);
+    }
+
+
+}
+
+Kode : Test Environment Variable
+
+File .env
+Selain membaca dari environment variable, Laravel juga memiliki kemampuan untuk membaca nilai dari file .env yang terdapat di project Laravel
+Ini lebih mudah dibandingkan mengubah environment variable di sistem operasi
+Kita cukup menambah environment variable ke file .env
+File .env secara default di ignore di Git project Laravel, oleh karena itu, kita bisa menambahkan konfigurasi di local tanpa takut ter-commit ke Git Repository
+
+Kode : File .env
+YOUTUBE='Programmer Zaman Now'
+
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=base64:8yKx5XZ8KxlLe1ZyOv6OcVLHKXA1AtRpq8RHi86d2f0=
+APP_DEBUG=true
+APP_URL=http://localhost
+
+Default Value
+Laravel mendukung default value untuk environment variable
+Default value adalah nilai yang akan digunakan ketika environment variable yang kita ambil tidak tersedia
+Kita bisa menggunakan function env(key, default) atau Env::get(key, default)
+
+Kode : Default Environment Value
+    public function testDefaultEnv()
+    {
+        $author = Env::get('AUTHOR', 'Eko');
+
+        self::assertEquals('Eko', $author);
+    }
+
+Application Environment
+Saat membuat aplikasi, kadang kita ingin menentukan saat ini sedang berjalan di environment mana, misal di local, di dev, di staging, di qa atau di production
+Di Laravel, hal ini biasanya dilakukan dengan menggunakan environment variable APP_ENV
+Dan untuk mengecek saat ini sedang berjalan di environment apa, kita bisa menggunakan function App::environment(value) atau App::environment([value1, value2]), dimana akan return true jika benar
+
+Kode : PHP Unit
+        <env name="APP_ENV" value="testing"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_DRIVER" value="array"/>
+
+Kode : Application Environment
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Support\Facades\App;
+use Tests\TestCase;
+
+class AppEnvironmentTest extends TestCase
+{
+    public function testAppEnv() {
+        if(App::environment(['testing', 'prod', 'dev'])){
+            // kode program kita
+            self::assertTrue(true);
+        }
+    }
+}
+
+Configuration
