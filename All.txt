@@ -229,3 +229,58 @@ class AppEnvironmentTest extends TestCase
 }
 
 Configuration
+Environment variable cocok digunakan untuk jenis konfigurasi yang memang butuh berubah-ubah nilainya, dan terintegrasi dengan baik dengan environment variable di sistem operasi
+Laravel juga mendukung penulisan konfigurasi dengan menggunakan PHP Code, konfigurasi ini biasanya digunakan ketika memang dibutuhkan tidak terlalu sering berubah, dan biasanya pengaturannya hampir sama untuk tiap lokasi dijalankan aplikasi
+Namun saat menggunakan fitur Laravel Configuration, kita juga tetap bisa mengakses Environment Variable
+
+Folder Configuration
+Laravel menyimpan semua konfigurasi di folder config yang terdapat di project
+Dan prefix dari konfigurasi diawali dengan file php yang terdapat di project tersebut
+
+Membuat File Konfigurasi
+Untuk membuat file konfigurasi, kita cukup membuat file php di dalam folder config
+Lalu di dalam file tersebut, kita cukup return konfigurasi dalam bentuk array
+
+Kode : contoh.php
+<?php
+
+return [
+    "author" => [
+        "first" => "adi",
+        "last" => "putra"
+    ],
+    "email" => "adi@gmail.com",
+    "web" => "hoho.com"
+];
+
+Mengambil Konfigurasi
+Untuk mengambil konfigurasi di file konfigurasi, kita bisa menggunakan function config(key, default)
+Dimana pembuatan key pada config diawali dengan nama file, lalu diikuti dengan key yang terdapat di dalam return value nya
+Tiap nested array menggunakan . (titik)
+Misal contoh.author.first, artinya kita ambil konfigurasi dari file contoh.php, lalu ambil data array key author, dan di dalamnya kita ambil data key first
+Sama seperti function env(), function config() juga memiliki parameter default value jika key konfigurasinya tidak tersedia
+
+Kode : Config Test
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class ConfigurationTest extends TestCase
+{
+    public function testConfig()
+    {
+        $firstName = config("contoh.author.first");
+        $lastName = config("contoh.author.last");
+        $email = config("contoh.email");
+        $web = config("contoh.web");
+
+        self::assertEquals("adi", $firstName);
+        self::assertEquals("putra", $lastName);
+        self::assertEquals("adi@gmail.com", $email);
+        self::assertEquals("hoho.com", $web);
+    }
+}
