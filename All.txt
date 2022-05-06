@@ -1,0 +1,70 @@
+Pengenalan Laravel
+Laravel adalah framework di PHP untuk membuat Web atau API
+Laravel pertama kali dibuat oleh Taylor Otwell tahun 2011
+Laravel adalah framework yang open source dan gratis, sehingga kita bisa menggunakannya tanpa biaya dan juga bisa berkontribusi ke projectnya
+https://laravel.com/
+https://github.com/laravel/laravel
+
+Kenapa Laravel?
+Saat ini Laravel adalah framework paling populer di PHP
+Banyak perusahaan yang sudah menggunakan Laravel sebagai framework pilihan ketika menggunakan PHP
+Laravel juga memiliki ekosistem yang sangat besar, terutama dari ekosistem teknologi pendukung, sehingga ketika menggunakan Laravel, kita bisa mengintegrasikan dengan teknologi pendukung nya dengan lebih mudah
+
+Model View Controller
+Laravel sendiri membawa konsep MVC (Model View Controller)
+Sehingga jika kita sudah terbiasa dengan konsep tersebut, kita akan dengan mudah menggunakan Laravel
+Detail dari konsep MVC itu sendiri sudah dibahas di kelas PHP MVC
+
+Versi Laravel
+https://laravel.com/docs/master/releases
+
+Library
+Laravel sendiri sebenarnya tidak membuat semua bagian pada framework nya sendiri
+Beberapa bagian menggunakan library yang sudah populer di PHP, dan sudah kita bahas di roadmap kelas PHP
+Contohnya untuk project management, Laravel menggunakan Composer
+Untuk Logging, Laravel menggunakan Monolog
+Untuk Unit Test, Laravel menggunakan PHPUnit
+Dan lain-lain
+
+Server Requirements
+PHP >= 8.0
+BCMath PHP Extension
+Ctype PHP Extension
+cURL PHP Extension
+DOM PHP Extension
+Fileinfo PHP Extension
+JSON PHP Extension
+Mbstring PHP Extension
+OpenSSL PHP Extension
+PCRE PHP Extension
+PDO PHP Extension
+Tokenizer PHP Extension
+XML PHP Extension
+
+Membuat Project
+Laravel menggunakan Composer untuk project management nya
+Dan untuk membuat projectnya pun kita bisa menggunakan Composer dengan perintah :
+composer create-project laravel/laravel=version nama-folder
+https://packagist.org/packages/laravel/laravel
+
+Struktur Project
+
+Menjalankan Laravel
+
+Artisan
+Saat kita membuat project Laravel, laravel sendiri sudah menyediakan secara otomatis sebuah file bernama artisan
+File artisan ini sendiri sebenarnya adalah file yang berisi kode php
+Kita bisa menggunakan perintah “php artisan” untuk melihat semua feature yang bisa dilakukan oleh file artisan
+
+Menjalankan Laravel
+File artisan bisa digunakan untuk melakukan banyak hal, salah satunya menjalankan aplikasi laravel ketika proses development
+Untuk menjalankan aplikasi laravel dalam mode development, kita bisa gunakan perintah :
+php artisan serve
+
+Git
+Saat kita membuat project Laravel, kita direkomendasikan untuk menggunakan Git sebagai source code management nya
+Kita juga bisa melihat ada file seperti .gitignore yang otomatis dibuat di project Laravel, untuk memberi tahu, bagian mana yang tidak perlu di commit ke dalam Git repository
+Jika teman-teman belum terbiasa dengan Git, saya sarankan mengikuti kelas Git saya sudah saya buat
+https://kelas.programmerzamannow.com/p/git-untuk-pemula-sampai-mahir
+
+Artisan
