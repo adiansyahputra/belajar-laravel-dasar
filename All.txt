@@ -68,3 +68,67 @@ Jika teman-teman belum terbiasa dengan Git, saya sarankan mengikuti kelas Git sa
 https://kelas.programmerzamannow.com/p/git-untuk-pemula-sampai-mahir
 
 Artisan
+Saat membuat project Laravel, Laravel menyediakan sebuah file bernama artisan
+File artisan ini adalah kode PHP yang bisa digunakan untuk banyak hal, kita akan bahas fitur-fitur file artisan ini secara bertahap di materi-materi selanjutnya
+
+Melihat Semua Fitur File Artisan
+Untuk melihat semua fitur file artisan, kita bisa gunakan perintah :
+php artisan
+Secara otomatis kita bisa lihat semua fitur yang terdapat di file artisan
+
+Melihat Detail Informasi
+Untuk melihat detail informasi perintah yang terdapat di file artisan, kita bisa gunakan perintah :
+php artisan perintah --help
+Contoh :
+php artisan serve --help
+
+Request Lifecycle
+Sebelum kita membuat kode program menggunakan Laravel, ada baiknya kita perlu tahu cara kerja Laravel itu sendiri
+Terutama bagaimana alur hidup dari request yang kita lakukan ke aplikasi Laravel
+Jika teman-teman sudah mengikuti kelas PHP MVC yang saya buat, harusnya tidak akan terlalu bingung, karena hampir sama cara kerja nya
+
+public/index.php
+Entry point pertama dari aplikasi Laravel adalah sebuah file index.php yang terdapat di folder public
+Semua request yang masuk ke aplikasi Laravel, maka akan masuk melalui file ini
+File ini sengaja disimpan di dalam folder public tersendiri, agar file-file kode program lainnya tidak bisa diakses via URL
+Ini file index.php sebenarnya tidak ada yang kompleks, hanya me-load framework Laravel, dan menjalankan kode program yang kita buat
+
+Kernel
+Dari index.php, request akan dilanjutkan ke class Kernel
+Di Laravel, terdapat dua jenis Kernel, HTTP Kernel, dan Console Kernel. HTTP Kernel digunakan untuk menangani request berupa HTTP, sedangkan Console Kernel digunakan untuk menangani request berupa perintah console
+Pada kelas ini kita bahas tentang HTTP Kernel, jadi ketika request web masuk ke index.php, maka request akan dilanjutkan ke HTTP Kernel
+
+Service Provider
+Kernel sendiri sebenarnya adalah core dari logic aplikasi, dimana di dalam Kernel, request yang masuk di tangani sampai mendapatkan response
+Kernel melakukan beberapa hal, pertama Kernel melakukan proses bootstraping, yaitu me-load yang namanya Service Provider, yang akan kita bahas di materi terpisah
+Laravel akan melakukan iterasi semua Service Provider dan melakukan proses registrasi dan juga bootstraping untuk semua Service Provider
+Service Provider ini lah yang bertanggung jawab melakukan bootstraping semua komponen di Laravel, seperti database, queue, validation, routing dan lain-lain
+
+Testing
+Laravel menggunakan PHPUnit untuk implementasi unit test nya
+Secara garis besar, di Laravel terdapat dua jenis test, unit test dan feature test / integration test
+
+Unit Test
+Untuk unit test, kita bisa membuat class unit test seperti menggunakan PHP Unit biasanya
+Yaitu dengan membuat class turunan dari PHPUnit\Framework\TestCase
+Jika kita perlu membuat test tanpa harus menggunakan fitur Laravel, maka kita cukup buat Unit Test saja
+
+Integration Test
+Laravel memiliki fitur yang mempermudah kita ketika membuat integration test
+Bedanya dari unit test, di integration test, aplikasi laravel bisa diakses dengan mudah, misal kita nanti mau memanggil Database, Controller, dan lain-lain
+Untuk membuat Integration Test, kita cukup membuat class turunan dari Illuminate\Foundation\Testing\TestCase
+Integration Test akan lebih lambat dibandingkan Unit Test, karena kita butuh me-load framework Laravel terlebih dahulu
+Dan jika kita membutuhkan fitur Laravel, maka kita wajib menggunakan Integration Test
+
+Membuat Test
+Untuk membuat Integration Test, kita bisa lakukan manual, atau kita bisa gunakan file artisan menggunakan perintah :
+php artisan make:test NamaTest
+Secara otomatis akan masuk ke folder tests/Feature
+Jika kita ingin membuat Unit Test, kita bisa gunakan perintah :
+php artisan make:test NamaTest --unit
+Secara otomatis akan masuk ke folder tests/Unit
+
+Menjalankan Test
+Untuk menjalankan test, kita bisa gunakan PHPUnit seperti biasanya
+Atau jika ingin menjalankan semua test, bisa menggunakan file artisan dengan perintah :
+php artisan test
