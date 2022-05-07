@@ -306,3 +306,66 @@ Saat kita membuat object, sering sekali kita membuat object yang butuh object la
 https://en.wikipedia.org/wiki/Dependency_injection
 
 Kode : Foo Class
+<?php
+
+namespace App\Data;
+
+class Foo
+{
+    public function foo(): string
+    {
+        return "Foo";
+    }
+}
+
+Kode : Bar Class
+<?php
+
+namespace App\Data;
+
+class Bar
+{
+    public Foo $foo;
+
+    public function __construct(Foo $foo)
+    {
+        $this->foo = $foo;
+    }
+
+    public function bar(): string
+    {
+        return $this->foo->foo() . ' and Bar';
+    }
+}
+
+Foo dan Bar
+Dari class Foo dan Bar kita tahu bahwa Bar membutuhkan Foo, artinya Bar depends-on Foo, atau Foo adalah dependency untuk Bar
+Dependency Injection berarti kita perlu memasukkan object Foo ke dalam Bar, sehingga Bar bisa menggunakan object Foo
+Pada kode Foo dan Bar kita menggunakan Constructor untuk melakukan injection (memasukkan dependency), sebenarnya caranya tidak hanya menggunakan Constructor, bisa menggunakan Attribute atau Function, namun sangat direkomendasikan menggunakan Constructor agar bisa terlihat jelas dependencies nya dan kita tidak lupa menambahkan dependencies nya
+
+Kode : Dependency Injection
+<?php
+
+namespace Tests\Feature;
+
+use App\Data\Bar;
+use App\Data\Foo;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class DependencyInjectionTest extends TestCase
+{
+    public function testDependencyInjection()
+    {
+        $foo = new Foo();
+        $bar = new Bar($foo);
+        //        $bar->setFoo($foo);
+        //        $bar->foo = $foo;
+
+        self::assertEquals('Foo and Bar', $bar->bar());
+    }
+}
+
+Service Container
+
