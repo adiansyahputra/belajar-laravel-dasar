@@ -368,4 +368,529 @@ class DependencyInjectionTest extends TestCase
 }
 
 Service Container
+Sebelumnya kita sudah mencoba melakukan Dependency Injection secara manual
+Laravel memiliki fitur Dependency Injection secara otomatis, dan ini wajib dikuasai agar lebih mudah membuat aplikasi menggunakan Laravel
+Di Laravel fitur ini bernama Service Container, dimana Service Container ini merupakan fitur yang digunakan untuk manajemen dependencies dan juga dependency injection
 
+Application Class
+Service Container di Laravel direpresentasikan dalam class bernama Application
+Kita tidak perlu membuat class Application secara manual, karena semua sudah dilakukan secara otomatis oleh framework Laravel
+Di semua project Laravel, hampir disemua bagian terdapat field $app yang merupakan instance dari Application
+https://laravel.com/api/9.x/Illuminate/Foundation/Application.html
+
+Membuat Dependency
+Dengan menggunakan Service Container, kita tidak perlu membuat object secara manual lagi menggunakan kata kunci new
+Kita bisa menggunakan function make(key) yang terdapat di class Application untuk membuat dependency secara otomatis
+Saat kita menggunakan make(key), object akan selalu dibuat baru, jadi harap hati-hati ketika menggunakannya, karena dia bukan menggunakan object yang sama
+
+Kode : Membuat Dependency
+<?php
+
+namespace Tests\Feature;
+
+use App\Data\Bar;
+use App\Data\Foo;
+use App\Data\Person;
+use App\Services\HelloService;
+use App\Services\HelloServiceIndonesia;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class ServiceContainerTest extends TestCase
+{
+    public function testDependency()
+    {
+        $foo1 = $this->app->make(Foo::class); // new Foo()
+        $foo2 = $this->app->make(Foo::class); // new Foo()
+
+        self::assertEquals('Foo', $foo1->foo());
+        self::assertEquals('Foo', $foo2->foo());
+        self::assertNotSame($foo1, $foo2);
+    }
+
+    public function testBind()
+    {
+        // $person = $this->app->make(Person::class); // new Person()
+        // self::assertNotNull($person);
+
+        $this->app->bind(Person::class, function ($app) {
+            return new Person("Eko", "Khannedy");
+        });
+
+        $person1 = $this->app->make(Person::class); // closure() // new Person("Eko", "Khannedy");
+        $person2 = $this->app->make(Person::class); // closure() // new Person("Eko", "Khannedy");
+
+        self::assertEquals('Eko', $person1->firstName);
+        self::assertEquals('Eko', $person2->firstName);
+        self::assertNotSame($person1, $person2);
+    }
+
+    public function testSingleton()
+    {
+        $this->app->singleton(Person::class, function ($app) {
+            return new Person("Eko", "Khannedy");
+        });
+
+        $person1 = $this->app->make(Person::class); // new Person("Eko", "Khannedy"); if not exists
+        $person2 = $this->app->make(Person::class); // return existing
+        $person3 = $this->app->make(Person::class); // return existing
+        $person4 = $this->app->make(Person::class); // return existing
+
+        self::assertEquals('Eko', $person1->firstName);
+        self::assertEquals('Eko', $person2->firstName);
+        self::assertSame($person1, $person2);
+    }
+
+    public function testInstance()
+    {
+        $person = new Person("Eko", "Khannedy");
+        $this->app->instance(Person::class, $person);
+
+        $person1 = $this->app->make(Person::class); // $person
+        $person2 = $this->app->make(Person::class); // $person
+        $person3 = $this->app->make(Person::class); // $person
+        $person4 = $this->app->make(Person::class); // $person
+
+        self::assertEquals('Eko', $person1->firstName);
+        self::assertEquals('Eko', $person2->firstName);
+        self::assertSame($person1, $person2);
+    }
+
+    public function testDependencyInjection()
+    {
+        $this->app->singleton(Foo::class, function ($app) {
+            return new Foo();
+        });
+        $this->app->singleton(Bar::class, function ($app) {
+            $foo = $app->make(Foo::class);
+            return new Bar($foo);
+        });
+
+        $foo = $this->app->make(Foo::class);
+        $bar1 = $this->app->make(Bar::class);
+        $bar2 = $this->app->make(Bar::class);
+
+        self::assertSame($foo, $bar1->foo);
+        self::assertSame($bar1, $bar2);
+    }
+
+    public function testInterfaceToClass()
+    {
+        // $this->app->singleton(HelloService::class, HelloServiceIndonesia::class);
+
+        $this->app->singleton(HelloService::class, function ($app) {
+            return new HelloServiceIndonesia();
+        });
+
+        $helloService = $this->app->make(HelloService::class);
+
+        self::assertEquals('Halo Eko', $helloService->hello('Eko'));
+    }
+}
+
+    public function testDependency()
+    {
+        $foo1 = $this->app->make(Foo::class); // new Foo()
+        $foo2 = $this->app->make(Foo::class); // new Foo()
+
+        self::assertEquals('Foo', $foo1->foo());
+        self::assertEquals('Foo', $foo2->foo());
+        self::assertNotSame($foo1, $foo2);
+    }
+
+Mengubah Cara Membuat Dependency
+Saat kita menggunakan function make(key), secara otomatis Laravel akan membuat object, namun kadang kita ingin menentukan cara pembuatan objectnya
+Pada kasus seperti ini, kita bisa menggunakan method bind(key, closure)
+Kita cukup return kan data yang kita inginkan pada function closure nya
+Saat kita menggunakan make(key) untuk mengambil dependencynya, secara otomatis function closure akan dipanggil
+Perlu diingat juga, setiap kita memanggil make(key), maka function closure akan selalu dipanggil, jadi bukan menggunakan object yang sama
+
+Kode : Person Class
+<?php
+
+namespace App\Data;
+
+class Person
+{
+
+    public function __construct(
+        public string $firstName,
+        public string $lastName,
+    ) {
+    }
+}
+
+Kode : Bind Function
+    public function testBind()
+    {
+        // $person = $this->app->make(Person::class); // new Person()
+        // self::assertNotNull($person);
+
+        $this->app->bind(Person::class, function ($app) {
+            return new Person("Eko", "Khannedy");
+        });
+
+        $person1 = $this->app->make(Person::class); // closure() // new Person("Eko", "Khannedy");
+        $person2 = $this->app->make(Person::class); // closure() // new Person("Eko", "Khannedy");
+
+        self::assertEquals('Eko', $person1->firstName);
+        self::assertEquals('Eko', $person2->firstName);
+        self::assertNotSame($person1, $person2);
+    }
+
+Singleton
+Sebelumnya ketika menggunakan make(key), maka secara default Laravel akan membuat object baru, atau jika menggunakan bind(key, closure), function closure akan selalu dipanggil
+Kadang ada kebutuhan kita membuat object singleton, yaitu satu object saja, dan ketika butuh, kita cukup menggunakan object yang sama
+Pada kasus ini, kita bisa menggunakan function singleton(key, closure), maka secara otomatis ketika kita menggunakan make(key), maka object hanya dibuat di awal, selanjutnya object yang sama akan digunakan terus menerus ketika kita memanggil make(key)
+
+Kode : Singleton
+    public function testSingleton()
+    {
+        $this->app->singleton(Person::class, function ($app) {
+            return new Person("Eko", "Khannedy");
+        });
+
+        $person1 = $this->app->make(Person::class); // new Person("Eko", "Khannedy"); if not exists
+        $person2 = $this->app->make(Person::class); // return existing
+        $person3 = $this->app->make(Person::class); // return existing
+        $person4 = $this->app->make(Person::class); // return existing
+
+        self::assertEquals('Eko', $person1->firstName);
+        self::assertEquals('Eko', $person2->firstName);
+        self::assertSame($person1, $person2);
+    }
+
+Instance
+Selain menggunakan function singleton(key, closure), untuk membuat singleton object, kita juga bisa menggunakan object yang sudah ada, dengan cara menggunakan function instance(key, object)
+Ketika menggunakan make(key), maka instance object tersebut akan dikembalikan
+
+Kode : Instance
+    public function testInstance()
+    {
+        $person = new Person("Eko", "Khannedy");
+        $this->app->instance(Person::class, $person);
+
+        $person1 = $this->app->make(Person::class); // $person
+        $person2 = $this->app->make(Person::class); // $person
+        $person3 = $this->app->make(Person::class); // $person
+        $person4 = $this->app->make(Person::class); // $person
+
+        self::assertEquals('Eko', $person1->firstName);
+        self::assertEquals('Eko', $person2->firstName);
+        self::assertSame($person1, $person2);
+    }
+
+Dependency Injection
+Sekarang kita tahu bagaimana cara membuat dependency dan juga mendapatkan dependency di Laravel, sekarang bagaimana caranya melakukan dependency injection?
+Secara default, jika kita membuat object menggunakan make(key), lalu Laravel mendeteksi terdapat constructor, maka Laravel akan mencoba menggunakan dependency yang sesuai dengan tipe yang dibutuhkan di Laravel
+
+Kode : Mengubah Field Foo di Bar Class
+<?php
+
+namespace App\Data;
+
+class Bar
+{
+    public Foo $foo;
+
+    public function __construct(Foo $foo)
+    {
+        $this->foo = $foo;
+    }
+
+    public function bar(): string
+    {
+        return $this->foo->foo() . ' and Bar';
+    }
+}
+
+Kode : Dependency Injection
+    public function testDependencyInjection()
+    {
+        $this->app->singleton(Foo::class, function ($app) {
+            return new Foo();
+        });
+
+        $foo = $this->app->make(Foo::class);
+        $bar = $this->app->make(Bar::class);
+
+        self::assertSame("Foo and Bar", $bar->bar());
+        self::assertSame($foo, $bar->foo);
+
+    }
+
+Dependency Injection di Closure
+Dalam function closure yang kita gunakan, kita juga bisa menggunakan parameter $app untuk mengambil object yang sudah ada di Service Container
+Kadang ini mempermudah ketika kita ingin membuat object yang kompleks
+
+Kode : Dependency Injection di Closure
+    public function testDependencyInjection()
+    {
+        $this->app->singleton(Foo::class, function ($app) {
+            return new Foo();
+        });
+        $this->app->singleton(Bar::class, function ($app) {
+            $foo = $app->make(Foo::class);
+            return new Bar($foo);
+        });
+
+        $foo = $this->app->make(Foo::class);
+        $bar1 = $this->app->make(Bar::class);
+        $bar2 = $this->app->make(Bar::class);
+
+        self::assertSame($foo, $bar1->foo);
+        self::assertSame($bar1, $bar2);
+    }
+
+Binding Interface ke Class
+Dalam praktek pengembangan perangkat lunak, hal yang bagus ketika membuat sebuah class yang berhubungan dengan logic adalah, membuat interface sebagai kontrak nya. Harapannya agar implementasi classnya bisa berbeda-beda tanpa harus mengubah kontrak interface nya
+Laravel memiliki fitur melakukan binding dari interface ke class secara mudah, kita bisa menggunakan function bind(interface, class) atau bind(interface, closure) dimana closure nya mengembalikan object class implementasinya, atau bisa juga menggunakan function singleton(interface, class) dan singleton(interface, closure)
+
+Kode : HelloService Interface
+<?php
+
+namespace App\Services;
+
+interface HelloService
+{
+
+    public function hello(string $name): string;
+}
+
+Kode : HelloService Implementation
+<?php
+
+namespace App\Services;
+
+class HelloServiceIndonesia implements HelloService
+{
+
+    public function hello(string $name): string
+    {
+        return "Halo $name";
+    }
+}
+
+Kode : Test HelloService
+    public function testInterfaceToClass()
+    {
+        // $this->app->singleton(HelloService::class, HelloServiceIndonesia::class);
+
+        $this->app->singleton(HelloService::class, function ($app) {
+            return new HelloServiceIndonesia();
+        });
+
+        $helloService = $this->app->make(HelloService::class);
+
+        self::assertEquals('Halo Eko', $helloService->hello('Eko'));
+    }
+
+Service Provider
+Sekarang kita sudah tahu untuk melakukan dependency injection di Laravel, sekarang pertanyaannya apakah ada best practice dimana melakukan dependency injection tersebut?
+Laravel menyediakan fitur bernama Service Provider, dari namanya kita tahu bahwa ini adalah penyedia service atau dependency
+Di dalam Service Provider, biasanya kita melakukan registrasi dependency di dalam Service Container
+Bahkan semua proses bootstraping atau pembentukan object-object di framework Laravel itu sendiri dilakukan di ServiceProvider, kita bisa lihat saat pertama kali membuat project Laravel, ada banyak sekali file ServiceProvider di namespace App\Providers
+
+Membuat Service Provider
+Untuk membuat Service Provider, kita bisa memanfaatkan file artisan untuk melakukan auto generate file nya
+Kita bisa menggunakan perintah :
+php artisan make:provider NamaServiceProvider
+
+Kode : Membuat Service Provider
+php artisan make:provider FooBarServiceProvider
+
+Service Provider Function
+Di dalam Service Provider terdapat dua function, yaitu register() dan boot()
+Di register(), kita harus melakukan registrasi dependency yang dibutuhkan ke Service Container, jangan melakukan kode selain registrasi dependency di function register(), jika tidak ingin mengalami error dependency belum tersedia
+Function boot() dipanggil setelah register() selesai, di sini kita bisa melakukan hal apapun yang diperlukan setelah proses registrasi dependency selesai
+
+Kode : Foo Bar Service Provider
+<?php
+
+namespace App\Providers;
+
+use App\Data\Bar;
+use App\Data\Foo;
+use App\Services\HelloService;
+use App\Services\HelloServiceIndonesia;
+use Illuminate\Contracts\Support\DeferrableProvider;
+use Illuminate\Support\ServiceProvider;
+
+class FooBarServiceProvider extends ServiceProvider implements DeferrableProvider
+{
+    public array $singletons = [
+        HelloService::class => HelloServiceIndonesia::class
+    ];
+
+    /**
+     * Register services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        // echo "FooBarServiceProvider";
+        $this->app->singleton(Foo::class, function ($app) {
+            return new Foo();
+        });
+        $this->app->singleton(Bar::class, function ($app) {
+            return new Bar($app->make(Foo::class));
+        });
+    }
+
+    /**
+     * Bootstrap services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        //
+    }
+
+    public function provides(): array
+    {
+        return [HelloService::class, Foo::class, Bar::class];
+    }
+}
+
+class FooBarServiceProvider extends ServiceProvider implements DeferrableProvider
+{
+    public array $singletons = [
+        HelloService::class => HelloServiceIndonesia::class
+    ];
+
+    /**
+     * Register services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        // echo "FooBarServiceProvider";
+        $this->app->singleton(Foo::class, function ($app) {
+            return new Foo();
+        });
+        $this->app->singleton(Bar::class, function ($app) {
+            return new Bar($app->make(Foo::class));
+        });
+    }
+
+Registrasi Service Provider
+Setelah kita membuat Service Provider, secara default Service Provider tidak diload oleh Laravel
+Untuk memberi tahu Laravel jika kita ingin menambahkan Service Provider, kita perlu menambahkannya pada config di app.php, terdapat key providers yang berisi class-class Service Provider yang akan dijalankan oleh Laravel
+
+Kode : Registrasi Service Provider
+        /*
+         * Application Service Providers...
+         */
+        App\Providers\AppServiceProvider::class,
+        App\Providers\AuthServiceProvider::class,
+        // App\Providers\BroadcastServiceProvider::class,
+        App\Providers\EventServiceProvider::class,
+        App\Providers\RouteServiceProvider::class,
+        App\Providers\FooBarServiceProvider::class,
+
+Kode : Test Service Provider
+<?php
+
+namespace Tests\Feature;
+
+use App\Data\Bar;
+use App\Data\Foo;
+use App\Services\HelloService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class FooBarServiceProviderTest extends TestCase
+{
+    public function testServiceProvider()
+    {
+        $foo1 = $this->app->make(Foo::class);
+        $foo2 = $this->app->make(Foo::class);
+
+        self::assertSame($foo1, $foo2);
+
+        $bar1 = $this->app->make(Bar::class);
+        $bar2 = $this->app->make(Bar::class);
+
+        self::assertSame($bar1, $bar2);
+
+        self::assertSame($foo1, $bar1->foo);
+        self::assertSame($foo2, $bar2->foo);
+    }
+
+    public function testPropertySingletons()
+    {
+        $helloService1 = $this->app->make(HelloService::class);
+        $helloService2 = $this->app->make(HelloService::class);
+
+        self::assertSame($helloService1, $helloService2);
+
+        self::assertEquals('Halo Eko', $helloService1->hello('Eko'));
+    }
+
+    public function testEmpty()
+    {
+        self::assertTrue(true);
+    }
+}
+
+class FooBarServiceProviderTest extends TestCase
+{
+    public function testServiceProvider()
+    {
+        $foo1 = $this->app->make(Foo::class);
+        $foo2 = $this->app->make(Foo::class);
+
+        self::assertSame($foo1, $foo2);
+
+        $bar1 = $this->app->make(Bar::class);
+        $bar2 = $this->app->make(Bar::class);
+
+        self::assertSame($bar1, $bar2);
+
+        self::assertSame($foo1, $bar1->foo);
+        self::assertSame($foo2, $bar2->foo);
+    }
+
+bindings & singletons Properties
+Jika kita hanya butuh melakukan binding sederhana, misal dari interface ke class, kita bisa menggunakan fitur binding via properties di Service Provider
+Kita bisa tambahkan property bindings untuk membuat binding, atau
+Menggunakan property singletons untuk membuat binding singleton
+
+Kode : Singleton Properties
+class FooBarServiceProvider extends ServiceProvider implements DeferrableProvider
+{
+    public array $singletons = [
+        HelloService::class => HelloServiceIndonesia::class
+    ];
+
+Kode : Test Singleton Properties
+    public function testPropertySingletons()
+    {
+        $helloService1 = $this->app->make(HelloService::class);
+        $helloService2 = $this->app->make(HelloService::class);
+
+        self::assertSame($helloService1, $helloService2);
+
+        self::assertEquals('Halo Eko', $helloService1->hello('Eko'));
+    }
+
+Deferred Provider
+Secara default semua Service Provider akan di load oleh Laravel, baik itu kita butuhkan atau tidak
+Laravel memiliki fitur bernama Deferred Provider, dimana kita bisa menandai sebuah Service Provider agar tidak di load jika tidak dibutuhkan dependency nya
+Kita bisa menandai Service Provider kita dengan implement interface DeferrableProvider, lalu implement method provides() yang memberi tahu tipe dependency apa saja yang terdapat di Service Provider ini
+Dengan fitur ini, Service Provider hanya akan di load ketika memang dependency nya dibutuhkan
+Setiap ada request baru, maka Serive Provider yang sudah Deffered tidak akan di load jika memang tidak dibutuhkan
+
+Kode : Deferrable Provider
+class FooBarServiceProvider extends ServiceProvider implements DeferrableProvider
+{
+        public function provides(): array
+    {
+        return [HelloService::class, Foo::class, Bar::class];
+    }
+}
