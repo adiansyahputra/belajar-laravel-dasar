@@ -1018,3 +1018,186 @@ Daftar Facades
 Ada banyak Facades di Laravel, dan seperti dijelaskan sebelumnya, hampir semuanya banyak menggunakan dependency di Service Container
 Untuk lebih jelas tentang ada Facades apa saja, kita bisa lihat di sini :
 https://laravel.com/docs/9.x/facades#facade-class-reference
+
+Routing
+Routing adalah proses menerima HTTP Request dan menjalankan kode sesuai dengan URL yang diminta. Routing biasanya tergantung dari HTTP Method dan URL
+Salah satu Service Provider yang paling penting di Laravel adakah RouteServiceProvider.
+RouteServiceProvider bertanggung jawab untuk melakukan load data routing dari folder routes. Jika kita hapus Service Provider ini, secara otomatis proses routing tidak akan berjalan
+RouteServiceProvider secara default akan me-load data routing dari folder routes
+
+Basic Routing
+Salah satu contoh routing yang paling sederhana adalah menggunakan path dan juga closure function sebagai handler nya
+Kita bisa menggunakan Facades Route, lalu menggunakan function sesuai dengan HTTP Method nya, misal
+Route::get($uri, $callback);
+Route::post($uri, $callback);
+Route::put($uri, $callback);
+Route::patch($uri, $callback);
+Route::delete($uri, $callback);
+Route::options($uri, $callback);
+
+Kode : Basic Routing
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/pzn', function () {
+    return "Hello Programmer Zaman Now";
+});
+
+Kode : Test Basic Routing
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class RoutingTest extends TestCase
+{
+    public function testGet()
+    {
+        $this->get('/pzn')
+            ->assertStatus(200)
+            ->assertSeeText('Hello Programmer Zaman Now');
+    }
+
+    public function testRedirect()
+    {
+        $this->get('/youtube')
+            ->assertRedirect('/pzn');
+    }
+
+    public function testFallback()
+    {
+        $this->get('/tidakada')
+            ->assertSeeText('404 by Programmer Zaman Now');
+
+        $this->get('/tidakadalagi')
+            ->assertSeeText('404 by Programmer Zaman Now');
+
+        $this->get('/ups')
+            ->assertSeeText('404 by Programmer Zaman Now');
+    }
+
+    public function testRouteParameter()
+    {
+        $this->get('/products/1')
+            ->assertSeeText('Product 1');
+
+        $this->get('/products/2')
+            ->assertSeeText('Product 2');
+
+        $this->get('/products/1/items/XXX')
+            ->assertSeeText("Product 1, Item XXX");
+
+        $this->get('/products/2/items/YYY')
+            ->assertSeeText("Product 2, Item YYY");
+    }
+
+    public function testRouteParameterRegex()
+    {
+        $this->get('/categories/100')
+            ->assertSeeText('Category 100');
+
+        $this->get('/categories/eko')
+            ->assertSeeText('404 by Programmer Zaman Now');
+    }
+
+    public function testRouteParameterOptional()
+    {
+        $this->get('/users/khannedy')
+            ->assertSeeText('User khannedy');
+
+        $this->get('/users/')
+            ->assertSeeText('User 404');
+    }
+
+    public function testRouteConflict()
+    {
+        $this->get('/conflict/budi')
+            ->assertSeeText("Conflict budi");
+
+        $this->get('/conflict/eko')
+            ->assertSeeText("Conflict Eko Kurniawan Khannedy");
+    }
+
+    public function testNamedRoute()
+    {
+        $this->get('/produk/12345')
+            ->assertSeeText('Link http://localhost/products/12345');
+
+        $this->get('/produk-redirect/12345')
+            ->assertRedirect('/products/12345');
+    }
+}
+
+class RoutingTest extends TestCase
+{
+    public function testGet()
+    {
+        $this->get('/pzn')
+            ->assertStatus(200)
+            ->assertSeeText('Hello Programmer Zaman Now');
+    }
+
+Redirect
+Router juga bisa digunakan untuk melakukan redirect dari satu halaman ke halaman lain
+Kita bisa menggunakan function Route::redirect(from, to)
+
+Kode : Redirect
+Route::get('/pzn', function () {
+    return "Hello Programmer Zaman Now";
+});
+
+Route::redirect('/youtube', '/pzn');
+
+Kode : Unit Test Redirect
+class RoutingTest extends TestCase
+{
+    public function testGet()
+    {
+        $this->get('/pzn')
+            ->assertStatus(200)
+            ->assertSeeText('Hello Programmer Zaman Now');
+    }
+
+    public function testRedirect()
+    {
+        $this->get('/youtube')
+            ->assertRedirect('/pzn');
+    }
+
+Melihat Semua Routing
+Kadang kita ada kebutuhan melihat semua Routing yang ada di aplikasi Laravel kita
+Untuk melihatnya, kita bisa memanfaatkan file artisan dengan perintah :
+php artisan route:list
+
+Kode : Melihat Routing
+
+Fallback Route
+Apa yang terjadi jika kita melakukan request ke halaman yang tidak ada di aplikasi Laravel kita? Secara otomatis akan mengembalikan error 404
+Kadang-kadang kita ingin mengubah tampilan halaman error ketika halaman yang diakses tidak ada
+Pada kasus seperti ini, kita bisa membuat fallback route, yaitu callback yang akan dieksekusi ketika tidak ada route yang cocok dengan halaman yang diakses
+Kita bisa menggunakan function Route::fallback(closure)
+
+Kode : Fallback Route
+Route::redirect('/youtube', '/pzn');
+
+Route::fallback(function () {
+    return "404 by Programmer Zaman Now";
+});
+
+Kode : Test Fallback Route
+    public function testFallback()
+    {
+        $this->get('/tidakada')
+            ->assertSeeText('404 by Programmer Zaman Now');
+
+        $this->get('/tidakadalagi')
+            ->assertSeeText('404 by Programmer Zaman Now');
+
+        $this->get('/ups')
+            ->assertSeeText('404 by Programmer Zaman Now');
+    }
+
