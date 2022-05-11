@@ -1504,3 +1504,135 @@ Kode : Test Named Route
             ->assertRedirect('/products/12345');
     }
 
+Controller
+Membuat Route memang mudah, tapi jika kita harus menyimpan semua logic aplikasi kita di closure function Route, lama-lama akan sulit untuk dilakukan
+Di Laravel kita bisa menggunakan Controller sebagai tempat menyimpan logic dari Route, sehingga tidak perlu kita lakukan lagi di Route
+Controller direpresentasikan sebagai class, dan penamaan class nya selalu diakhiri dengan Controller, misal UserController, ProductController, CategoryController, dan lain-lain
+
+Membuat Controller
+Untuk membuat Controller, kita bisa membuatnya di namespace App\Http\Controllers, dimana class Controller adalah class turunan dari class Illuminate\Routing\Controller
+Agar lebih mudah, kita bisa menggunakan file artisan untuk membuat controller, caranya dengan menggunakan perintah :
+php artisan make:controller NamaController
+
+Kode : Membuat Controller
+php artisan make:controller HelloController
+
+Membuat Function di Controller
+Sebagai pengganti closure function di Route, kita bisa membuat function di Controller, dan menaruh semua logic web kita di function Controller
+Selanjutnya, kita bisa meregistrasikan function Controller tersebut ke Route, dengan cara mengganti parameter closure di route dengan array yang berisi class Controller dan juga function name nya
+
+Kode : Function Controller
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\HelloService;
+use Illuminate\Http\Request;
+
+class HelloController extends Controller
+{
+    private HelloService $helloService;
+
+    public function __construct(HelloService $helloService)
+    {
+        $this->helloService = $helloService;
+    }
+
+    public function hello(Request $request, string $name): string
+    {
+        //        $request->path();
+        //        $request->url();
+        //        $request->fullUrl();
+        return $this->helloService->hello($name);
+    }
+
+    public function request(Request $request): string
+    {
+        return $request->path() . PHP_EOL .
+            $request->url() . PHP_EOL .
+            $request->fullUrl() . PHP_EOL .
+            $request->method() . PHP_EOL .
+            $request->header('Accept');
+    }
+}
+
+Kode : Route Controller
+Route::get('/controller/hello/request', [\App\Http\Controllers\HelloController::class, 'request']);
+Route::get('/controller/hello/{name}', [\App\Http\Controllers\HelloController::class, 'hello']);
+
+Kode test
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class HelloControllerTest extends TestCase
+{
+    public function testHello()
+    {
+        $this->get('/controller/hello/Eko')
+            ->assertSeeText("Halo Eko");
+    }
+
+    public function testRequest()
+    {
+        $this->get('/controller/hello/request', [
+            "Accept" => "plain/text"
+        ])->assertSeeText("controller/hello/request")
+            ->assertSeeText("http://localhost/controller/hello/request")
+            ->assertSeeText("GET")
+            ->assertSeeText("plain/text");
+    }
+}
+
+Dependency Injection
+Controller mendukung Dependency Injection, pembuatan object Controller, sebenarnya dilakukan oleh Service Container
+Dengan demikian, kita bisa menambahkan dependency yang dibutuhkan di Constructor Controller, dan secara otomatis Laravel akan mengambil dependency tersebut dari Service Container
+
+Kode : Hello Controller
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\HelloService;
+use Illuminate\Http\Request;
+
+class HelloController extends Controller
+{
+    private HelloService $helloService;
+
+    public function __construct(HelloService $helloService)
+    {
+        $this->helloService = $helloService;
+    }
+
+    public function hello(Request $request, string $name): string
+    {
+        //        $request->path();
+        //        $request->url();
+        //        $request->fullUrl();
+        return $this->helloService->hello($name);
+    }
+
+    public function request(Request $request): string
+    {
+        return $request->path() . PHP_EOL .
+            $request->url() . PHP_EOL .
+            $request->fullUrl() . PHP_EOL .
+            $request->method() . PHP_EOL .
+            $request->header('Accept');
+    }
+}
+
+Kode : Hello Route
+Route::get('/controller/hello/{name}', [\App\Http\Controllers\HelloController::class, 'hello']);
+
+    public function testHello()
+    {
+        $this->get('/controller/hello/Eko')
+            ->assertSeeText("Halo Eko");
+    }
+
