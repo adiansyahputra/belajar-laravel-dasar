@@ -1636,3 +1636,83 @@ Route::get('/controller/hello/{name}', [\App\Http\Controllers\HelloController::c
             ->assertSeeText("Halo Eko");
     }
 
+Request
+Di PHP, biasanya ketika kita ingin mendapatkan detail dari request biasanya kita lakukan menggunakan global variable seperti $_GET, $_POST, dan lain-lain
+Di Laravel, kita tidak perlu melakukan itu lagi, HTTP Request di bungkus dalam sebuah object dari class Illuminate\Http\Request
+Dan kita bisa menambahkan Request di parameter function di Router atau di Controller, dan secara otomatis nanti Laravel akan melakukan dependency injection data Request tersebut
+
+Kode : Request
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Services\HelloService;
+use Illuminate\Http\Request;
+
+class HelloController extends Controller
+{
+    private HelloService $helloService;
+
+    public function __construct(HelloService $helloService)
+    {
+        $this->helloService = $helloService;
+    }
+
+    public function hello(Request $request, string $name): string
+    {
+        //        $request->path();
+        //        $request->url();
+        //        $request->fullUrl();
+        return $this->helloService->hello($name);
+    }
+
+    public function request(Request $request): string
+    {
+        return $request->path() . PHP_EOL .
+            $request->url() . PHP_EOL .
+            $request->fullUrl() . PHP_EOL .
+            $request->method() . PHP_EOL .
+            $request->header('Accept');
+    }
+}
+
+Request Path
+Object Request banyak memiliki method yang bisa kita gunakan untuk mendapatkan informasi Path dan URL
+$request->path() untuk mendapatkan path, misal http://example.com/foo/bar, akan mengembalikan foo/bar
+$request->url() untuk mendapat URL tanpa query parameter
+$request->fullUrl() untuk mendapatkan URL dengan query parameter
+
+Request Method
+Request juga bisa digunakan untuk mendapatkan informasi HTTP Method
+$request->method() akan mengembalikan HTTP Method
+$request->isMethod(method) digunakan untuk mengecek apakah request memiliki HTTP method sesuai parameter atau tidak, misal $request->isMethod(‘post’)
+
+Request Method
+Untuk mendapatkan informasi HTTP Header, kita juga bisa menggunakan object Request
+$request->header(key) digunakan untuk mendapatkan data header dengan key parameter
+$request->header(key, default) digunakan untuk mendapatkan data header dengan key parameter, jika tidak ada maka akan mengembalikan data default nya
+$request->bearerToken() digunakan untuk mendapatkan informasi token Bearer yang terdapat di header Authorization, dan secara otomatis menghapus prefix Bearer nya
+
+Kode : Request
+Route::get('/controller/hello/request', [\App\Http\Controllers\HelloController::class, 'request']);
+
+   public function request(Request $request): string
+    {
+        return $request->path() . PHP_EOL .
+            $request->url() . PHP_EOL .
+            $request->fullUrl() . PHP_EOL .
+            $request->method() . PHP_EOL .
+            $request->header('Accept');
+    }
+
+Kode : Test Request
+    public function testRequest()
+    {
+        $this->get('/controller/hello/request', [
+            "Accept" => "plain/text"
+        ])->assertSeeText("controller/hello/request")
+            ->assertSeeText("http://localhost/controller/hello/request")
+            ->assertSeeText("GET")
+            ->assertSeeText("plain/text");
+    }
+
