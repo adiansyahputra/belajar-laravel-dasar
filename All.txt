@@ -1716,3 +1716,194 @@ Kode : Test Request
             ->assertSeeText("plain/text");
     }
 
+Request Input
+Saat membuat aplikasi web, kita tahu bahwa dalam HTTP Request kita bisa mengirim data, baik itu melalui query parameter, atau melalui body (misal dalam bentuk form)
+Biasanya kita menggunakan $_GET atau $_POST atau $_FILES, namun di Laravel, kita bisa menggunakan object Request untuk mendapatkan input yang dikirim melalui HTTP Request
+
+Mengambil Input
+Untuk mengambil input yang dikirim oleh user, tidak peduli apapun HTTP Method yang digunakan, dan dari mana asalnya, entah dari body atau query parameter
+Untuk mengambil input user, kita bisa gunakan method input(key, default) pada Request, dimana jika key nya tidak ada, maka akan mengembalikan default value di parameter
+
+Kode : Mengambil Input
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class InputController extends Controller
+{
+    public function hello(Request $request): string
+    {
+        $name = $request->input('name');
+        // $name = $request->name;
+        return "Hello $name";
+    }
+
+    public function helloFirstName(Request $request): string
+    {
+        $firstName = $request->input('name.first');
+        return "Hello $firstName";
+    }
+
+    public function helloInput(Request $request): string
+    {
+        $input = $request->input();
+        return json_encode($input);
+    }
+
+    public function helloArray(Request $request): string
+    {
+        $names = $request->input("products.*.name");
+        return json_encode($names);
+    }
+
+    public function inputType(Request $request): string
+    {
+        $name = $request->input('name');
+        $married = $request->boolean('married');
+        $birthDate = $request->date('birth_date', 'Y-m-d');
+
+        return json_encode([
+            'name' => $name,
+            'married' => $married,
+            'birth_date' => $birthDate->format('Y-m-d')
+        ]);
+    }
+
+    public function filterOnly(Request $request): string
+    {
+        $name = $request->only("name.first", "name.last");
+        return json_encode($name);
+    }
+
+    public function filterExcept(Request $request): string
+    {
+        $user = $request->except("admin");
+        return json_encode($user);
+    }
+
+    public function filterMerge(Request $request): string
+    {
+        $request->merge([
+            "admin" => false
+        ]);
+        $user = $request->input();
+        return json_encode($user);
+    }
+}
+
+class InputController extends Controller
+{
+    public function hello(Request $request): string
+    {
+        $name = $request->input('name');
+        // $name = $request->name;
+        return "Hello $name";
+    }
+
+Kode : Router dan Test
+Route::get('/input/hello', [\App\Http\Controllers\InputController::class, 'hello']);
+Route::post('/input/hello', [\App\Http\Controllers\InputController::class, 'hello']);
+
+class InputControllerTest extends TestCase
+{
+    public function testInput()
+    {
+        $this->get('/input/hello?name=Eko')
+            ->assertSeeText('Hello Eko');
+
+        $this->post('/input/hello', [
+            'name' => 'Eko'
+        ])->assertSeeText('Hello Eko');
+    }
+
+Nested Input
+Salah satu fitur yang powerful di Laravel adalah, kita bisa mengambil input nested hanya dengan menggunakan titik
+Misal jika kita menggunakan $requet->input(‘name.first’), maka artinya itu mengambil key first di dalam name, Ini cocok ketika kita kirim request dalam bentuk form atau json
+
+Kode : Nested Input
+    public function helloFirstName(Request $request): string
+    {
+        $firstName = $request->input('name.first');
+        return "Hello $firstName";
+    }
+
+Route::post('/input/hello/first', [\App\Http\Controllers\InputController::class, 'helloFirstName']);
+
+Kode : Test Nested Input
+    public function testInputNested()
+    {
+        $this->post('/input/hello/first', [
+            "name" => [
+                "first" => "Eko",
+                "last" => "Khannedy"
+            ]
+        ])->assertSeeText("Hello Eko");
+    }
+
+Mengambil Semua Input
+Untuk mengambil semua input yang terdapat di HTTP Request, baik itu dari query param ataupun body, kita bisa menggunakan method input() tanpa parameter milik Request
+Return value dari method input() ini adalah array
+
+Kode : Mengambil Semua Input
+    public function helloInput(Request $request): string
+    {
+        $input = $request->input();
+        return json_encode($input);
+    }
+
+Route::post('/input/hello/input', [\App\Http\Controllers\InputController::class, 'helloInput']);
+
+Kode : Test Semua Input
+    public function testInputAll()
+    {
+        $this->post('/input/hello/input', [
+            "name" => [
+                "first" => "Eko",
+                "last" => "Khannedy"
+            ]
+        ])->assertSeeText("name")->assertSeeText("first")
+            ->assertSeeText("last")->assertSeeText("Eko")
+            ->assertSeeText("Khannedy");
+    }
+
+Mengambil Array Input
+Laravel juga memiliki kemampuan untuk mengambil value dari input berupa array
+Misal kita bisa gunakan $request->input(‘products.*.name’), artinya kita mengambil semua name yang ada di array products
+
+Kode : Mengambil Array Input
+    public function helloArray(Request $request): string
+    {
+        $names = $request->input("products.*.name");
+        return json_encode($names);
+    }
+
+Route::post('/input/hello/array', [\App\Http\Controllers\InputController::class, 'helloArray']);
+
+Kode : Test Mengambil Input Array
+    public function testInputArray()
+    {
+        $this->post('/input/hello/array', [
+            "products" => [
+                [
+                    "name" => "Apple Mac Book Pro",
+                    "price" => 30000000
+                ],
+                [
+                    "name" => "Samsung Galaxy S10",
+                    "price" => 15000000
+                ]
+            ]
+        ])->assertSeeText("Apple Mac Book Pro")
+            ->assertSeeText("Samsung Galaxy S10");
+    }
+
+Input Query String
+Method input() digunakan untuk mengambil data di semua input, baik itu query param ataupun body
+Jika misal kita hanya butuh mengambil data di query param, kita bisa menggunakan method $request->query(key)
+Atau jika semua query dalam bentuk array, kita bisa gunakan $request->query() tanpa parameter key
+
+Dynamic Properties
+Laravel juga mendukung Dynamic Properties yang secara otomatis akan mengambil key dari input Request
+Misal ketika kita menggunakan $request->first_name, jika dalam object Request tidak ada property dengan nama $first_name, maka secara otomatis akan mengambil input dengan key first_name
