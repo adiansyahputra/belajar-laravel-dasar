@@ -1946,3 +1946,81 @@ Kode : Test Input Type
         ])->assertSeeText('Budi')->assertSeeText("true")->assertSeeText("1990-10-10");
     }
 
+Filter Request Input
+Kadang pada saat kita menerima input data dari user, kita ingin secara mudah menerima semua key input, lalu menyimpannya ke database misalnya
+Pada kasus seperti ini, kadang sangat berbahaya jika misal user secara tidak sengaja mengirim key yang salah, lalu kita mencoba melakukan update key yang salah itu ke database
+Untungnya Laravel memiliki helper method di class Request untuk melakukan filter input
+
+Method Filter Request Input
+$request->only([key1, key2]) digunakan untuk mengambil hanya input yang kita sebutkan di parameter
+$request->except([key1, key2]) digunakan untuk mengambil semua input, tapi tidak dengan yang kita sebutkan di parameter
+
+Kode : Filter Request Input
+    public function filterOnly(Request $request): string
+    {
+        $name = $request->only("name.first", "name.last");
+        return json_encode($name);
+    }
+
+    public function filterExcept(Request $request): string
+    {
+        $user = $request->except("admin");
+        return json_encode($user);
+    }
+
+Kode : Route Filter Request Input
+Route::post('/input/filter/only', [\App\Http\Controllers\InputController::class, 'filterOnly']);
+Route::post('/input/filter/except', [\App\Http\Controllers\InputController::class, 'filterExcept']);
+
+Kode : Test Filter Only
+    public function testFilterOnly()
+    {
+        $this->post('/input/filter/only', [
+            "name" => [
+                "first" => "Eko",
+                "middle" => "Kurniawan",
+                "last" => "Khannedy"
+            ]
+        ])->assertSeeText("Eko")->assertSeeText("Khannedy")
+            ->assertDontSeeText("Kurniawan");
+    }
+
+Kode : Test Filter Except
+    public function testFilterExcept()
+    {
+        $this->post('/input/filter/except', [
+            "username" => "khannedy",
+            "password" => "rahasia",
+            "admin" => "true"
+        ])->assertSeeText("khannedy")->assertSeeText("rahasia")
+            ->assertDontSeeText("admin");
+    }
+
+Merge Input
+Kadang-kadang kita ingin menambahkan default input value ketika input tersebut tidak dikirim di request
+Kita bisa menggunakan method merge(array) untuk menambah input ke request, dan jika ada key yang sama, otomatis akan diganti
+Atau mergeIfMissing(array) untuk menambah input ke request, dan jika input dengan kay yang sama sudah ada, maka akan dibatalkan
+
+Kode : Merge Input
+    public function filterMerge(Request $request): string
+    {
+        $request->merge([
+            "admin" => false
+        ]);
+        $user = $request->input();
+        return json_encode($user);
+    }
+
+Route::post('/input/filter/merge', [\App\Http\Controllers\InputController::class, 'filterMerge']);
+
+Kode : Test Merge Input
+    public function testFilterMerge()
+    {
+        $this->post('/input/filter/merge', [
+            "username" => "khannedy",
+            "password" => "rahasia",
+            "admin" => "true"
+        ])->assertSeeText("khannedy")->assertSeeText("rahasia")
+            ->assertSeeText("admin")->assertSeeText("false");
+    }
+
