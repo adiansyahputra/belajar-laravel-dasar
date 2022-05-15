@@ -2164,3 +2164,249 @@ Secara default, Laravel sudah mengamankan semua pengiriman data melalui Form Pos
 Hal menjadikan kita tidak bisa mengirim data Form Post ke aplikasi Laravel kita jika tidak memiliki token
 CSRF Token ini diverifikasi oleh Middleware \App\Http\Middleware\VerifyCsrfToken
 Kita bisa men-disable Middleware tersebut di Kernel jika ingin mencoba tanpa CSRF Token
+
+Response
+Sebelumnya kita sudah tahu di Route dan Controller, kita bisa mengembalikan data berupa string dan view
+Laravel memiliki class Illuminate\Http\Response, yang bisa digunakan untuk representasi dari HTTP Response
+Dengan class Response ini, kita bisa mengubah HTTP Response seperti Body, Header, Cookie, dan lain-lain
+Untuk membuat object response, kita bisa menggunakan function helper response(content, status, headers)
+
+Kode : Response
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+
+class ResponseController extends Controller
+{
+    public function response(Request $request): Response
+    {
+        return response("hello response");
+    }
+
+    public function header(Request $request): Response
+    {
+        $body = [
+            'firstName' => 'Eko',
+            'lastName' => 'Khannedy'
+        ];
+
+        return response(json_encode($body), 200)
+            ->header('Content-Type', 'application/json')
+            ->withHeaders([
+                'Author' => 'Programmer Zaman Now',
+                'App' => 'Belajar Laravel'
+            ]);
+    }
+
+    public function responseView(Request $request): Response
+    {
+        return response()
+            ->view('hello', ['name' => 'Eko']);
+    }
+
+    public function responseJson(Request $request): JsonResponse
+    {
+        $body = [
+            'firstName' => 'Eko',
+            'lastName' => 'Khannedy'
+        ];
+        return response()
+            ->json($body);
+    }
+
+    public function responseFile(Request $request): BinaryFileResponse
+    {
+        return response()
+            ->file(storage_path('app/public/pictures/Batu.png'));
+    }
+
+    public function responseDownload(Request $request): BinaryFileResponse
+    {
+        return response()
+            ->download(storage_path('app/public/pictures/Batu.png'));
+    }
+}
+
+    public function response(Request $request): Response
+    {
+        return response("hello response");
+    }
+
+Route::get('/response/hello', [\App\Http\Controllers\ResponseController::class, 'response']);
+
+Kode : Test Response
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class ResponseControllerTest extends TestCase
+{
+    public function testResponse()
+    {
+        $this->get('/response/hello')
+            ->assertStatus(200)
+            ->assertSeeText('hello response');
+    }
+
+    public function testHeader()
+    {
+        $this->get('/response/header')
+            ->assertStatus(200)
+            ->assertSeeText('Eko')->assertSeeText('Khannedy')
+            ->assertHeader('Content-Type', 'application/json')
+            ->assertHeader('Author', 'Programmer Zaman Now')
+            ->assertHeader('App', 'Belajar Laravel');
+    }
+
+    public function testView()
+    {
+        $this->get('/response/type/view')
+            ->assertSeeText("Hello Eko");
+    }
+
+    public function testJson()
+    {
+        $this->get('/response/type/json')
+            ->assertJson([
+                "firstName" => 'Eko',
+                "lastName" => "Khannedy"
+            ]);
+    }
+
+    public function testFile()
+    {
+        $this->get('/response/type/file')
+            ->assertHeader('Content-Type', "image/png");
+    }
+
+    public function testDownload()
+    {
+        $this->get('/response/type/download')
+            ->assertDownload('Batu.png');
+    }
+}
+
+    public function testResponse()
+    {
+        $this->get('/response/hello')
+            ->assertStatus(200)
+            ->assertSeeText('hello response');
+    }
+
+HTTP Response Header
+Saat kita membuat Response, kita bisa ubah status dan juga response header
+Kita bisa menggunakan function response(content, status, headers)
+Atau bisa menggunakan method withHeaders(arrayHeaders) dan header(key, value)
+
+Kode : Response Header
+    public function header(Request $request): Response
+    {
+        $body = [
+            'firstName' => 'Eko',
+            'lastName' => 'Khannedy'
+        ];
+
+        return response(json_encode($body), 200)
+            ->header('Content-Type', 'application/json')
+            ->withHeaders([
+                'Author' => 'Programmer Zaman Now',
+                'App' => 'Belajar Laravel'
+            ]);
+    }
+
+Route::get('/response/header', [\App\Http\Controllers\ResponseController::class, 'header']);
+
+Kode : Test Response Header
+    public function testHeader()
+    {
+        $this->get('/response/header')
+            ->assertStatus(200)
+            ->assertSeeText('Eko')->assertSeeText('Khannedy')
+            ->assertHeader('Content-Type', 'application/json')
+            ->assertHeader('Author', 'Programmer Zaman Now')
+            ->assertHeader('App', 'Belajar Laravel');
+    }
+
+Response Type
+Sebelumnya kita sudah melakukan response JSON secara manual, sebenarnya Response sudah memiliki banyak sekali helper method untuk beberapa jenis response type
+Untuk menampilkan view, kita bisa menggunakan method view(name, data, status, headers)
+Untuk menampilkan JSON, kita bisa menggunakan method json(array, status, headers)
+Untuk menampilkan file, kita bisa menggunakan file(pathToFile, headers)
+Untuk menampilkan file download, kita bisa menggunakan method download(pathToFile, name, headers)
+
+Kode : Response View dan JSON
+    public function responseView(Request $request): Response
+    {
+        return response()
+            ->view('hello', ['name' => 'Eko']);
+    }
+
+    public function responseJson(Request $request): JsonResponse
+    {
+        $body = [
+            'firstName' => 'Eko',
+            'lastName' => 'Khannedy'
+        ];
+        return response()
+            ->json($body);
+    }
+
+Kode : Response File dan Download
+    public function responseFile(Request $request): BinaryFileResponse
+    {
+        return response()
+            ->file(storage_path('app/public/pictures/Batu.png'));
+    }
+
+    public function responseDownload(Request $request): BinaryFileResponse
+    {
+        return response()
+            ->download(storage_path('app/public/pictures/Batu.png'));
+    }
+
+Kode : Route
+Route::prefix("/response/type")->group(function () {
+    Route::get('/view', [\App\Http\Controllers\ResponseController::class, 'responseView']);
+    Route::get('/json', [\App\Http\Controllers\ResponseController::class, 'responseJson']);
+    Route::get('/file', [\App\Http\Controllers\ResponseController::class, 'responseFile']);
+    Route::get('/download', [\App\Http\Controllers\ResponseController::class, 'responseDownload']);
+});
+
+Kode : Test Response View dan JSON
+    public function testView()
+    {
+        $this->get('/response/type/view')
+            ->assertSeeText("Hello Eko");
+    }
+
+    public function testJson()
+    {
+        $this->get('/response/type/json')
+            ->assertJson([
+                "firstName" => 'Eko',
+                "lastName" => "Khannedy"
+            ]);
+    }
+
+Kode : Test Response File dan Download
+    public function testFile()
+    {
+        $this->get('/response/type/file')
+            ->assertHeader('Content-Type', "image/png");
+    }
+
+    public function testDownload()
+    {
+        $this->get('/response/type/download')
+            ->assertDownload('Batu.png');
+    }
+
