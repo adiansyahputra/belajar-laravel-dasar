@@ -2109,3 +2109,58 @@ Laravel memiliki fitur bernama Storage Link, dimana kita bisa membuat link dari 
 Dengan ini maka file yang terdapat di File Storage Public bisa diakses via web
 Untuk membuat link nya, kita bisa gunakan perintah :
 php artisan storage:link
+
+File Upload
+Laravel juga sudah menyediakan method file(key) di Request untuk mengambil request file upload
+Tipe data File Upload direpresentasikan dalam class Illuminate\Http\UploadedFile di Laravel
+https://laravel.com/api/9.x/Illuminate/Http/UploadedFile.html
+File Upload di Laravel terintegrasi dengan baik dengan File Storage
+
+Kode : File Upload
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class FileController extends Controller
+{
+    public function upload(Request $request): string
+    {
+        $picture = $request->file('picture');
+
+        $picture->storePubliclyAs("pictures", $picture->getClientOriginalName(), "public");
+
+        return "OK " . $picture->getClientOriginalName();
+    }
+}
+
+Route::post('/file/upload', [\App\Http\Controllers\FileController::class, 'upload'])
+
+Kode : Unit Test File Upload
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\UploadedFile;
+use Tests\TestCase;
+
+class FileControllerTest extends TestCase
+{
+    public function testUpload()
+    {
+        $picture = UploadedFile::fake()->image('khannedy.png');
+
+        $this->post('/file/upload', [
+            'picture' => $picture
+        ])->assertSeeText("OK khannedy.png");
+    }
+}
+
+Error CSRF
+Secara default, Laravel sudah mengamankan semua pengiriman data melalui Form Post menggunakan CSRF (Cross Site Request Forgery) token
+Hal menjadikan kita tidak bisa mengirim data Form Post ke aplikasi Laravel kita jika tidak memiliki token
+CSRF Token ini diverifikasi oleh Middleware \App\Http\Middleware\VerifyCsrfToken
+Kita bisa men-disable Middleware tersebut di Kernel jika ingin mencoba tanpa CSRF Token
