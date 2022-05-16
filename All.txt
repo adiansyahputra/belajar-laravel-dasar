@@ -2600,3 +2600,190 @@ Route::controller(\App\Http\Controllers\CookieController::class)->group(function
     Route::get('/cookie/get', 'getCookie');
     Route::get('/cookie/clear', 'clearCookie');
 });
+
+Redirect
+Sebelumnya kita sudah bahas tentang redirect di materi Route, sekarang kita bahas lebih detail tentang redirect
+Redirect itu sendiri di Laravel direpresentasikan dalam response Illuminate\Http\RedirectResponse
+Untuk membuat object redirect, kita bisa menggunakan helper function redirect(to)
+
+Kode : Redirect
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+
+class RedirectController extends Controller
+{
+    public function redirectTo(): string
+    {
+        return "Redirect To";
+    }
+
+    public function redirectFrom(): RedirectResponse
+    {
+        return redirect("/redirect/to");
+    }
+
+    public function redirectHello(string $name): string
+    {
+        return "Hello $name";
+    }
+
+    public function redirectName(): RedirectResponse
+    {
+        return redirect()->route('redirect-hello', [
+            "name" => "Eko"
+        ]);
+    }
+
+    public function redirectAction(): RedirectResponse
+    {
+        return redirect()->action([RedirectController::class, 'redirectHello'], [
+            'name' => 'Eko'
+        ]);
+    }
+
+    public function redirectAway(): RedirectResponse
+    {
+        return redirect()->away("https://www.programmerzamannow.com/");
+    }
+}
+
+    public function redirectTo(): string
+    {
+        return "Redirect To";
+    }
+
+    public function redirectFrom(): RedirectResponse
+    {
+        return redirect("/redirect/to");
+    }
+
+Route::get('/redirect/from', [\App\Http\Controllers\RedirectController::class, 'redirectFrom']);
+Route::get('/redirect/to', [\App\Http\Controllers\RedirectController::class, 'redirectTo']);
+
+Kode : Test Redirect
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class RedirectControllerTest extends TestCase
+{
+    public function testRedirect()
+    {
+        $this->get('/redirect/from')
+            ->assertRedirect('/redirect/to');
+    }
+
+    public function testRedirectName()
+    {
+        $this->get('/redirect/name')
+            ->assertRedirect('/redirect/name/Eko');
+    }
+
+    public function testRedirectAction()
+    {
+        $this->get('/redirect/action')
+            ->assertRedirect('/redirect/name/Eko');
+    }
+
+    public function testRedirectAway()
+    {
+        $this->get('/redirect/away')
+            ->assertRedirect('https://www.programmerzamannow.com/');
+    }
+}
+
+    public function testRedirect()
+    {
+        $this->get('/redirect/from')
+            ->assertRedirect('/redirect/to');
+    }
+
+Redirect to Named Routes
+Sebelumnya kita sudah tahu bahwa kita bisa menambahkan name di routes
+Laravel juga bisa melakukan redirect ke routes berdasarkan namanya, salah satu keuntungannya adalah kita bisa menambahkan parameter tanpa harus manual membuat path nya
+Kita bisa menggunakan method route(name, params) di RedirectResponse
+
+Kode : Redirect To Named Routes
+    public function redirectHello(string $name): string
+    {
+        return "Hello $name";
+    }
+
+    public function redirectName(): RedirectResponse
+    {
+        return redirect()->route('redirect-hello', [
+            "name" => "Eko"
+        ]);
+    }
+
+Route::get('/redirect/name', [\App\Http\Controllers\RedirectController::class, 'redirectName']);
+Route::get('/redirect/name/{name}', [\App\Http\Controllers\RedirectController::class, 'redirectHello'])
+    ->name('redirect-hello');
+Route::get('/redirect/named', function () {
+    //    return route('redirect-hello', ['name' => 'Eko']);
+    //    return url()->route('redirect-hello', ['name' => 'Eko']);
+    return \Illuminate\Support\Facades\URL::route('redirect-hello', ['name' => 'Eko']);
+});
+
+Kode : Test Redirect to Named Routes
+    public function testRedirectName()
+    {
+        $this->get('/redirect/name')
+            ->assertRedirect('/redirect/name/Eko');
+    }
+
+Redirect to Controller Action
+Selain menggunakan Named Routes, kita juga bisa melakukan redirect ke Controller Action
+Secara otomatis nanti Laravel akan mencari path yang sesuai dengan Controller Action tersebut
+Kita bisa menggunakan method action(controller, params) di RedirectResponse
+
+Kode : Redirect to Controller Action
+    public function redirectAction(): RedirectResponse
+    {
+        return redirect()->action([RedirectController::class, 'redirectHello'], [
+            'name' => 'Eko'
+        ]);
+    }
+
+    public function redirectHello(string $name): string
+    {
+        return "Hello $name";
+    }
+
+Route::get('/redirect/action', [\App\Http\Controllers\RedirectController::class, 'redirectAction']);
+
+Kode : Test Redirect to Controller Action
+    public function testRedirectAction()
+    {
+        $this->get('/redirect/action')
+            ->assertRedirect('/redirect/name/Eko');
+    }
+
+Redirect to External Domain
+Secara default, redirect hanya dilakukan ke domain yang sama dengan lokasi domain aplikasi web Laravel nya
+Jika kita ingin melakukan redirect ke domain lain, kita bisa menggunakan method away(url) di RedirectResponse
+
+Kode : Redirect to External Domain
+    public function redirectAway(): RedirectResponse
+    {
+        return redirect()->away("https://www.programmerzamannow.com/");
+    }
+
+Route::get('/redirect/away', [\App\Http\Controllers\RedirectController::class, 'redirectAway']);
+
+    public function testRedirectAway()
+    {
+        $this->get('/redirect/away')
+            ->assertRedirect('https://www.programmerzamannow.com/');
+    }
+
+
+
