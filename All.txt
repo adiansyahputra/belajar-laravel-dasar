@@ -2447,3 +2447,156 @@ class EncryptionTest extends TestCase
         self::assertEquals('Eko Kurniawan', $decrypt);
     }
 }
+
+Cookie
+Saat kita membuat HTTP Response, kadang kita perlu membuat cookie.
+Cookie adalah data yang otomatis dikirim ketika kita melakukan HTTP Request juga.
+Jadi kadang Cookie banyak digunakan untuk melakukan management session di aplikasi berbasis web.
+
+Secure Cookie
+Secara default, cookie yang dibuat di Laravel akan selalu di enkripsi, dan ketika kita membaca cookie, secara otomatis akan di dekrip
+Semua hal itu dilakukan otomatis oleh class App\Http\Middleware\EncryptCookies
+Jika misal kita tidak ingin melakukan enkripsi pada sebuah cookie, kita bisa mengubah property EncryptCookies yang bernama $except
+
+Membuat Cookie
+Untuk membuat cookie, kita bisa gunakan method cookie(name, value, timeou, path, domain, secure, httpOnly) di object Response
+
+Kode : Membuat Cookie
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
+class CookieController extends Controller
+{
+    public function createCookie(Request $request): Response
+    {
+        return response("Hello Cookie")
+            ->cookie("User-Id", "khannedy", 1000, "/")
+            ->cookie("Is-Member", "true", 1000, "/");
+    }
+
+    public function getCookie(Request $request): JsonResponse
+    {
+        return response()
+            ->json([
+                "userId" => $request->cookie("User-Id", "guest"),
+                "isMember" => $request->cookie("Is-Member", 'false')
+            ]);
+    }
+
+    public function clearCookie(Request $request): Response
+    {
+        return response("Clear Cookie")
+            ->withoutCookie("User-Id")
+            ->withoutCookie("Is-Member");
+    }
+}
+
+    public function createCookie(Request $request): Response
+    {
+        return response("Hello Cookie")
+            ->cookie("User-Id", "khannedy", 1000, "/")
+            ->cookie("Is-Member", "true", 1000, "/");
+    }
+
+Route::controller(\App\Http\Controllers\CookieController::class)->group(function () {
+    Route::get('/cookie/set', 'createCookie');
+    Route::get('/cookie/get', 'getCookie');
+    Route::get('/cookie/clear', 'clearCookie');
+});
+
+Kode : Test Membuat Cookie
+<?php
+
+namespace Tests\Feature;
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
+
+class CookieControllerTest extends TestCase
+{
+    public function testCreateCookie()
+    {
+        $this->get('/cookie/set')
+            ->assertSeeText("Hello Cookie")
+            ->assertCookie("User-Id", "khannedy")
+            ->assertCookie("Is-Member", "true");
+    }
+
+    public function testGetCookie()
+    {
+        $this->withCookie("User-Id", "khannedy")
+            ->withCookie("Is-Member", "true")
+            ->get('/cookie/get')
+            ->assertJson([
+                "userId" => "khannedy",
+                "isMember" => "true"
+            ]);
+    }
+}
+
+    public function testCreateCookie()
+    {
+        $this->get('/cookie/set')
+            ->assertSeeText("Hello Cookie")
+            ->assertCookie("User-Id", "khannedy")
+            ->assertCookie("Is-Member", "true");
+    }
+
+Menerima Cookie
+Setelah membuat cookie di Response, secara otomatis Cookie akan disimpan di Browser sampai timeout atau expired
+Browser akan secara otomatis mengirim cookie tersebut ke domain dan path yang sudah ditentukan ketika kita membuat cookie
+Oleh karena itu, kita bisa menangkap data cookie tersebut di Response dengan method cookie(name, default)
+Atau jika ingin mengambil semua cookies dalam array, kita bisa gunakan $request->cookies->all()
+
+Kode : Menerima Cookie
+    public function getCookie(Request $request): JsonResponse
+    {
+        return response()
+            ->json([
+                "userId" => $request->cookie("User-Id", "guest"),
+                "isMember" => $request->cookie("Is-Member", 'false')
+            ]);
+    }
+
+Route::controller(\App\Http\Controllers\CookieController::class)->group(function () {
+    Route::get('/cookie/set', 'createCookie');
+    Route::get('/cookie/get', 'getCookie');
+    Route::get('/cookie/clear', 'clearCookie');
+});
+
+Kode : Test Menerima Cookie
+    public function testGetCookie()
+    {
+        $this->withCookie("User-Id", "khannedy")
+            ->withCookie("Is-Member", "true")
+            ->get('/cookie/get')
+            ->assertJson([
+                "userId" => "khannedy",
+                "isMember" => "true"
+            ]);
+    }
+
+Clear Cookie
+Tidak ada cara untuk menghapus cookie
+Namun jika kita ingin menghapus cookie, kita bisa membuat cookie dengan nama yang sama dengan value kosong, dan waktu expired secepatnya
+Di Laravel, hal ini bisa kita lakukan dengan menggunakan method withoutCookie(name)
+
+Kode : Clear Cookie
+    public function clearCookie(Request $request): Response
+    {
+        return response("Clear Cookie")
+            ->withoutCookie("User-Id")
+            ->withoutCookie("Is-Member");
+    }
+
+Route::controller(\App\Http\Controllers\CookieController::class)->group(function () {
+    Route::get('/cookie/set', 'createCookie');
+    Route::get('/cookie/get', 'getCookie');
+    Route::get('/cookie/clear', 'clearCookie');
+});
